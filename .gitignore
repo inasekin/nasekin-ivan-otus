@@ -1,3 +1,16 @@
-.DS_Store
+.node_modules
+bower_components
+
+.DS_*
+*.log
+logs
+**/*.backup.*
+**/*.back.*
+
 .idea
 .vscode
+*.sublime*
+
+psd
+thumb
+sketch
