@@ -1,5 +1,6 @@
 const sum = () => {
-    console.log(123);
+  // eslint-disable-next-line no-console
+  console.log(123);
 };
 
 export default sum;

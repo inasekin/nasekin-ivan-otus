@@ -1,0 +1,26 @@
+{
+  "name": "nasekin-ivan-otus",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/inasekin/nasekin-ivan-otus.git"
+  },
+  "author": "nasekinid",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/inasekin/nasekin-ivan-otus/issues"
+  },
+  "devDependencies": {
+    "eslint": "^8.24.0",
+    "eslint-config-htmlacademy": "^4.1.0",
+    "eslint-config-prettier": "^8.5.0",
+    "eslint-plugin-prettier": "^4.2.1",
+    "prettier": "2.7.1"
+  },
+  "homepage": "https://github.com/inasekin/nasekin-ivan-otus#readme"
+}
