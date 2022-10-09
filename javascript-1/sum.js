@@ -1,6 +1,4 @@
-const sum = () => {
-  // eslint-disable-next-line no-console
-  console.log(123);
-};
+const sum = (zeroParam) => (firstParam) =>
+  Number.isFinite(firstParam) ? sum(zeroParam + firstParam) : zeroParam;
 
 export default sum;
