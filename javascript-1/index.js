@@ -1,5 +1,7 @@
 /* eslint-disable no-console */
+// eslint-disable-next-line import/extensions
 import maxItemAssociation from './maxItemAssociation.js';
+// eslint-disable-next-line import/extensions
 import sum from './sum.js';
 
 console.log(
