@@ -1,5 +1,4 @@
-const sum = () => {
-    console.log(123);
-};
+const sum = (zeroParam) => (firstParam) =>
+  Number.isFinite(firstParam) ? sum(zeroParam + firstParam) : zeroParam;
 
 export default sum;
