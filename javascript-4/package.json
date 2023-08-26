@@ -1,0 +1,12 @@
+{
+  "name": "javascript-4",
+  "version": "1.0.0",
+  "description": "Напишите NodeJS скрипт tree для вывода списка файлов и папок файловой системы.",
+  "main": "index.js",
+  "scripts": {
+    "tree": "node tree.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
