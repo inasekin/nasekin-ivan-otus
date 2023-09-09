@@ -1,4 +1,9 @@
-const fs = require('node:fs/promises');
+const fs = require('node:fs');
+const readline = require('node:readline');
+const stream = require('node:stream');
+const util = require('node:util');
+
+const pipeline = util.promisify(stream.pipeline);
 
 async function main() {
   const inputFile = process.argv[2];
@@ -12,11 +17,11 @@ async function main() {
   const wordCountMap = new Map();
 
   try {
-    const data = await fs.readFile(inputFile, 'utf8');
-    const lines = data.split(/\r?\n/);
+    const readStream = fs.createReadStream(inputFile, 'utf8');
+    const lineStream = readline.createInterface({ input: readStream });
 
     // eslint-disable-next-line no-restricted-syntax
-    for (const line of lines) {
+    for await (const line of lineStream) {
       const words = line.split(/\s+/);
 
       // eslint-disable-next-line no-restricted-syntax
@@ -37,7 +42,9 @@ async function main() {
     const sortedWords = Array.from(wordCountMap.keys()).sort();
     const vector = sortedWords.map((word) => wordCountMap.get(word));
 
-    await fs.writeFile(outputFile, vector.join(' '));
+    const writeStream = fs.createWriteStream(outputFile);
+    await pipeline(stream.Readable.from(vector.join(' ')), writeStream);
+
     console.log('Indexing complete.');
   } catch (error) {
     console.error('An error occurred:', error.message);
