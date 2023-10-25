@@ -10,7 +10,7 @@ async function main() {
   const outputFile = process.argv[3];
 
   if (!inputFile || !outputFile) {
-    console.error('Usage: node index.js input.txt output.txt');
+    console.error('Usage: node tree.js input.txt output.txt');
     process.exit(1);
   }
 
