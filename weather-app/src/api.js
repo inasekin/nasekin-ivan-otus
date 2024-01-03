@@ -1,4 +1,6 @@
-const API_KEY = 'e49cc30354c7928185299fc2cef674fe';
+import env from "react-dotenv";
+
+const API_KEY = env.WEATHER_API_KEY;
 
 export async function fetchWeather(city) {
     const response = await fetch(`https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${API_KEY}&units=metric`);

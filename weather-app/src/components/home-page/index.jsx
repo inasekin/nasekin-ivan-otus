@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { Button, Form, Container, Row, Col, ListGroup, InputGroup } from 'react-bootstrap';
+import {Button, Form, Container, Row, Col, ListGroup, InputGroup, Alert} from 'react-bootstrap';
 import { fetchWeather } from '../../api';
 import { useNavigate } from 'react-router-dom';
 import {setCities} from "../../features/weather/weatherSlice";
@@ -8,6 +8,7 @@ import {setCities} from "../../features/weather/weatherSlice";
 function HomePage() {
     const [input, setInput] = useState('');
     const [searchResults, setSearchResults] = useState([]);
+    const [error, setError] = useState('');
     const dispatch = useDispatch();
     const navigate = useNavigate();
     const cities = useSelector(state => state.weather.cities);
@@ -19,11 +20,13 @@ function HomePage() {
 
     const handleSearch = async () => {
         try {
+            setError('');
             const weatherData = await fetchWeather(input);
             setSearchResults([weatherData]);
             dispatch(setCities([input]));
             localStorage.setItem('cities', JSON.stringify([...cities, input]));
         } catch (error) {
+            setError("Error fetching weather. Please try again or check your token.");
             console.error("Error fetching weather:", error);
         }
     };
@@ -51,6 +54,7 @@ function HomePage() {
                         />
                         <Button variant="primary" onClick={handleSearch}>Search</Button>
                     </InputGroup>
+                    {error && <Alert variant="danger" style={{ marginTop: '15px' }}>{error}</Alert>}
                 </Col>
             </Row>
             <Row>
