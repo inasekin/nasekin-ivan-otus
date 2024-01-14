@@ -1,0 +1,8 @@
+<div class="recently-added">
+  <h2>Recently Added Words</h2>
+  <input type="text" [(ngModel)]="newWord" placeholder="Add new word">
+  <button (click)="addWord()">Add Word</button>
+  <ul>
+    <li *ngFor="let word of words">{{ word }}</li>
+  </ul>
+</div>

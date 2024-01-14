@@ -1,0 +1,12 @@
+<div class="settings">
+  <h2>Settings</h2>
+  <div>
+    <label>Number of Words per Exercise:</label>
+    <input type="number" [(ngModel)]="settings.wordsPerExercise">
+  </div>
+  <div>
+    <label>Exercise Duration (minutes):</label>
+    <input type="number" [(ngModel)]="settings.exerciseDuration">
+  </div>
+  <button (click)="saveSettings()">Save Settings</button>
+</div>
