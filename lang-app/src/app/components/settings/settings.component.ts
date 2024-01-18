@@ -13,10 +13,17 @@ export class SettingsComponent {
   settings: any;
 
   constructor(private settingsService: SettingsService) {
-    this.settings = this.settingsService.getSettings();
+    this.settingsService.currentSettings.subscribe(currentSettings => {
+      this.settings = currentSettings;
+    });
   }
 
   saveSettings() {
     this.settingsService.saveSettings(this.settings);
+  }
+
+  changeLanguage(language: string) {
+    this.settings.language = language;
+    this.saveSettings();
   }
 }

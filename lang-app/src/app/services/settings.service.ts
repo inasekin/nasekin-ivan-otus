@@ -16,9 +16,17 @@ export class SettingsService {
   private loadSettings() {
     if (isPlatformBrowser(this.platformId)) {
       const settings = localStorage.getItem('settings');
-      return settings ? JSON.parse(settings) : {};
+      return settings ? JSON.parse(settings) : this.getDefaultSettings();
     }
     return {};
+  }
+
+  private getDefaultSettings(): any {
+    return {
+      language: 'en',
+      wordsPerExercise: 3,
+      exerciseDuration: 1,
+    };
   }
 
   getSettings() {

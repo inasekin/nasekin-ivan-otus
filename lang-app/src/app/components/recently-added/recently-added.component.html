@@ -1,8 +1,8 @@
-<div class="recently-added">
+<div class="recently-added container">
   <h2>Recently Added Words</h2>
-  <input type="text" [(ngModel)]="newWord" placeholder="Add new word">
+  <input type="text" [(ngModel)]="newWord" placeholder="Add new word" class="mt-4">
   <button (click)="addWord()">Add Word</button>
-  <ul>
-    <li *ngFor="let word of words">{{ word }}</li>
+  <ul class="list-group mt-4">
+    <li *ngFor="let word of words" class="list-group-item list-group-item-action">{{ word }}</li>
   </ul>
 </div>

@@ -1,12 +1,20 @@
-<div class="settings">
+<div class="settings container">
   <h2>Settings</h2>
-  <div>
+  <div class="mt-4">
     <label>Number of Words per Exercise:</label>
     <input type="number" [(ngModel)]="settings.wordsPerExercise">
   </div>
-  <div>
+  <div class="mt-4">
     <label>Exercise Duration (minutes):</label>
     <input type="number" [(ngModel)]="settings.exerciseDuration">
   </div>
-  <button (click)="saveSettings()">Save Settings</button>
+  <div class="mt-4">
+    <label for="language-select">Choose a language:</label>
+    <select id="language-select" [(ngModel)]="settings.language" (change)="saveSettings()">
+      <option value="en">English</option>
+      <option value="ru">
+        Russian</option>
+    </select>
+  </div>
+  <button (click)="saveSettings()" class="mt-4">Save Settings</button>
 </div>

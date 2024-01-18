@@ -44,28 +44,31 @@ export class ExercisesComponent implements OnInit {
         this.remainingTime--;
       } else {
         clearInterval(this.timerInterval);
+        this.timerInterval = null;
         this.errorMessage = 'Time\'s up! The test will start again.';
-        this.hasErrorOccurred = true; // Установка флага ошибки
+        this.testCompleted = true; // Указываем, что тест завершен
+        this.hasErrorOccurred = true;
         setTimeout(() => this.resetTest(), 2000); // Перезапуск теста через 2 секунды
       }
     }, 1000);
   }
   resetTest() {
-    clearInterval(this.timerInterval);
-    this.correctAnswersCount = 0;
-    this.hasErrorOccurred = false;
-    this.currentWordIndex = 0;
-    this.remainingTime = this.settings.exerciseDuration; // Сброс времени теста
-    this.startTimer();
-    this.loadWords();
+    if (this.settings && this.settings.exerciseDuration) {
+      this.testCompleted = false;
+      this.hasErrorOccurred = false;
+      this.correctAnswersCount = 0;
+      this.currentWordIndex = 0;
+      this.remainingTime = this.settings.exerciseDuration * 60; // Установить оставшееся время
+      this.loadWords(); // Загрузить новые слова
+      this.startTimer(); // Запустить таймер заново
+    }
   }
 
   ngOnInit() {
     this.settingsService.currentSettings.subscribe(settings => {
       this.settings = settings;
-      this.remainingTime = this.settings.exerciseDuration * 60; // Преобразуем минуты в секунды
-      this.startTimer();
-      this.loadWords();
+      this.remainingTime = this.settings.exerciseDuration * 60; // Установить оставшееся время
+      this.resetTest(); // Сбросить тест с новыми настройками
     });
   }
 
@@ -76,21 +79,37 @@ export class ExercisesComponent implements OnInit {
   }
 
   loadWords() {
-    this.words = this.dictionaryStorage.getRecentWords(this.settings.wordsPerExercise);
+    let words = this.dictionaryStorage.getRecentWords(this.settings.wordsPerExercise);
+    // Перемешивание массива слов для получения случайного порядка
+    this.words = this.shuffleArray(words);
     this.currentWordIndex = 0; // Сброс индекса при загрузке новых слов
     this.loadNewWord();
   }
 
+  // Вспомогательный метод для перемешивания массива
+  private shuffleArray(array: any[]): any[] {
+    for (let i = array.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [array[i], array[j]] = [array[j], array[i]];
+    }
+    return array;
+  }
+
   loadNewWord() {
     // Если тест завершен из-за ошибки или истечения времени, не продолжаем дальше
-    if (this.hasErrorOccurred) {
+    if (this.hasErrorOccurred || this.testCompleted) {
       return;
     }
+    // Сброс сообщения об ошибке перед загрузкой нового слова
+    this.testCompleted = false;
+    this.errorMessage = '';
+    const sourceLanguage = this.settings.language;
+    const targetLanguage = sourceLanguage === 'en' ? 'ru' : 'en'; // Переключаемся между английским и русским
 
     // Проверяем, остались ли еще слова для теста
     if (this.currentWordIndex < this.words.length) {
       const originalWord = this.words[this.currentWordIndex];
-      this.translateService.translateWord(originalWord, 'en', 'ru').subscribe(
+      this.translateService.translateWord(originalWord, sourceLanguage, targetLanguage).subscribe(
         translatedWord => {
           this.currentWordPair = { originalWord, translatedWord };
           this.isCorrect = null;
@@ -98,33 +117,41 @@ export class ExercisesComponent implements OnInit {
         },
         error => {
           this.errorMessage = 'Error fetching translation';
+          this.hasErrorOccurred = true;
+          clearInterval(this.timerInterval);
         }
       );
     } else {
       // Все слова использованы, завершаем тест
-      // Это условие должно выполниться только один раз
-      if (!this.hasErrorOccurred && !this.testCompleted) {
-        this.testCompleted = true; // Устанавливаем флаг, что тест завершен
-        clearInterval(this.timerInterval);
-        this.errorMessage = `Test complete! Correct answers: ${this.correctAnswersCount}`;
-      }
+      this.finishTest();
     }
   }
 
+  finishTest() {
+    // Установка флага завершения теста и вывод сообщения о завершении
+    this.testCompleted = true;
+    this.errorMessage = `Test complete! Correct answers: ${this.correctAnswersCount}`;
+    clearInterval(this.timerInterval); // Останавливаем таймер, тест завершен
+  }
+
   checkTranslation() {
-    if (this.hasErrorOccurred) {
-      return; // Прекращаем обработку, если тест уже завершен
+    if (this.hasErrorOccurred || this.testCompleted) {
+      return; // Если тест завершен или произошла ошибка, выходим из функции
     }
 
     if (this.userTranslation.trim().toLowerCase() === this.currentWordPair.translatedWord.toLowerCase()) {
       this.correctAnswersCount++;
-      this.currentWordIndex++;
-      this.loadNewWord();
+      this.errorMessage = ''; // Очищаем сообщение об ошибке при правильном ответе
     } else {
-      this.hasErrorOccurred = true;
-      clearInterval(this.timerInterval);
-      this.errorMessage = 'Translation error! The test will start again.';
-      this.resetTest();
+      this.errorMessage = 'Incorrect translation. Try again.';
+      this.hasErrorOccurred = true; // Флаг ошибки для блокировки дальнейших попыток
+    }
+
+    this.currentWordIndex++;
+    if (this.currentWordIndex >= this.words.length) {
+      this.finishTest(); // Если слова закончились, завершаем тест
+    } else {
+      this.loadNewWord(); // Загружаем новое слово
     }
   }
 }
