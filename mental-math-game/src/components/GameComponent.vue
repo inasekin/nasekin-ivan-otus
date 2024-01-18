@@ -166,7 +166,7 @@ export default {
   margin: auto;
 }
 .btn-primary, .form-control {
-  height: 38px; /* или высота, которая соответствует вашему дизайну */
+  height: 38px;
 }
 .text-danger {
   margin-top: 10px;
