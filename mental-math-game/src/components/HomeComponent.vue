@@ -1,48 +1,26 @@
 <template>
-  <div class="container my-5 p-3 bg-light shadow">
-    <h1 class="text-center mb-4">Привет!</h1>
-    <p class="text-center mb-4">Добро пожаловать на {{ trainingDay }} тренировочный день, Ваш последний результат - решено {{ lastResult.correct }} из {{ lastResult.total }}. Общая точность {{ lastResult.accuracy }}%.</p>
+  <div class="home">
+    <h1>Привет!</h1>
+    <p>Добро пожаловать на {{ trainingDay }} тренировочный день,</p>
+    <p>Ваш последний результат - решено {{ lastResult.correct }} из {{ lastResult.total }}.</p>
+    <p>Общая точность {{ lastResult.accuracy }}%.</p>
 
-    <div class="settings mb-5">
-      <h2 class="text-center mb-4">Настройки</h2>
-
-      <div class="mb-3">
-        <label for="duration" class="form-label d-block">Длительность (минуты): {{ settings.duration }}</label>
-        <input type="range" id="duration" min="1" max="15" v-model="settings.duration" class="form-range">
+    <div class="settings">
+      <div class="form-group">
+        <label for="difficulty-range">Сложность: {{ settings.difficulty }}</label>
+        <input type="range" id="difficulty-range" v-model="settings.difficulty" min="1" max="10" class="form-control-range">
       </div>
 
-      <div class="mb-3">
-        <label for="difficulty" class="form-label d-block">Сложность: {{ settings.difficulty }}</label>
-        <input type="range" id="difficulty" min="1" max="10" v-model="settings.difficulty" class="form-range">
+      <div class="form-group">
+        <label for="duration-range">Длительность (минуты): {{ settings.duration }}</label>
+        <input type="range" id="duration-range" v-model="settings.duration" min="1" max="15" class="form-control-range">
       </div>
-
-      <h3 class="text-center mb-3">Типы вычислений</h3>
-      <div class="d-flex flex-column align-items-center mb-4">
-        <div class="form-check form-check-inline">
-          <input class="form-check-input" type="checkbox" id="addition" value="addition" v-model="settings.operations">
-          <label class="form-check-label" for="addition">Суммирование</label>
-        </div>
-        <div class="form-check form-check-inline">
-          <input class="form-check-input" type="checkbox" id="subtraction" value="subtraction" v-model="settings.operations">
-          <label class="form-check-label" for="subtraction">Вычитание</label>
-        </div>
-        <div class="form-check form-check-inline">
-          <input class="form-check-input" type="checkbox" id="multiplication" value="multiplication" v-model="settings.operations">
-          <label class="form-check-label" for="multiplication">Умножение</label>
-        </div>
-        <div class="form-check form-check-inline">
-          <input class="form-check-input" type="checkbox" id="division" value="division" v-model="settings.operations">
-          <label class="form-check-label" for="division">Деление</label>
-        </div>
-        <div class="form-check form-check-inline">
-          <input class="form-check-input" type="checkbox" id="exponentiation" value="exponentiation" v-model="settings.operations">
-          <label class="form-check-label" for="exponentiation">Возведение в степень</label>
-        </div>
+      <div class="form-check" v-for="(operation, index) in operations" :key="index">
+        <label class="form-check-label">
+          <input type="checkbox" class="form-check-input" :value="operation" v-model="settings.operations"> {{ operationsDict[operation] }}
+        </label>
       </div>
-
-      <div class="text-center">
-        <button class="btn btn-primary" @click="startGame">Play!</button>
-      </div>
+      <button @click="startGame" class="btn btn-primary">Играть!</button>
     </div>
   </div>
 </template>
@@ -55,60 +33,108 @@ export default {
       trainingDay: 0,
       lastResult: {
         correct: 0,
-        total: 25,
+        total: 0,
         accuracy: 0
       },
       settings: {
         difficulty: 5,
         duration: 7,
-        operations: []
+        operations: ['addition', 'division', 'exponentiation']
+      },
+      operations: ['addition', 'subtraction', 'multiplication', 'division', 'exponentiation'],
+      operationsDict: {
+        'addition': 'Сложение',
+        'subtraction': 'Вычитание',
+        'multiplication': 'Умножение',
+        'division': 'Деление',
+        'exponentiation': 'Возведение в степень'
       }
     };
   },
-  mounted() {
-    this.loadLastGameResults();
+  created() {
+    this.loadStats();
+    const today = new Date().toISOString().split('T')[0];
+    if (!this.lastVisit || this.lastVisit !== today) {
+      this.trainingDay++;
+      this.lastVisit = today;
+      this.saveStats();
+    }
   },
   methods: {
     startGame() {
-      this.$router.push({ name: 'Game', params: { settings: this.settings } });
+      this.saveStats();
+      this.$router.push({
+        name: 'Game',
+        query: {
+          difficulty: this.settings.difficulty,
+          duration: this.settings.duration,
+          operations: this.settings.operations.join(',') // Преобразуем массив операций в строку
+        }
+      });
     },
-    loadLastGameResults() {
-      const savedState = localStorage.getItem('gameState');
-      if (savedState) {
-        const gameState = JSON.parse(savedState);
-        this.lastResult = {
-          correct: gameState.score,
-          total: this.lastResult.total,
-          accuracy: Math.round((gameState.score / this.lastResult.total) * 100)
-        };
+    loadStats() {
+      const stats = localStorage.getItem('stats');
+      const lastResultData = localStorage.getItem('lastResult');
+      const today = new Date().toISOString().split('T')[0];
+
+      if (stats) {
+        const parsedStats = JSON.parse(stats);
+        this.trainingDay = parsedStats.trainingDay;
+
+        if (parsedStats.lastVisit !== today) {
+          this.trainingDay++;
+        }
+      } else {
+        this.trainingDay = 1;
       }
-    }
+
+      if (lastResultData) {
+        this.lastResult = JSON.parse(lastResultData);
+      } else {
+        this.lastResult = { correct: 0, total: 0, accuracy: 0 };
+      }
+
+      this.lastVisit = today;
+      this.saveStats();
+    },
+    saveStats() {
+      const stats = {
+        trainingDay: this.trainingDay,
+        lastResult: this.lastResult,
+        lastVisit: this.lastVisit
+      };
+      localStorage.setItem('stats', JSON.stringify(stats));
+    },
   }
 };
 </script>
 
 <style scoped>
-.container {
-  max-width: 600px;
-  margin: auto;
-  background-color: #f8f9fa; /* серый фон */
-  border-radius: 10px; /* скругленные углы */
-  border: 1px solid #e1e1e1; /* тонкая граница для контейнера */
-}
-.settings {
-  margin-top: 20px;
-}
-.form-label {
+.home {
   text-align: center;
-  display: block;
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 20px;
 }
-.form-range {
-  margin: auto; /* центрирование ползунка */
+
+.settings {
+  margin: 30px auto;
+  width: 100%;
 }
-.form-check {
-  margin-bottom: 10px; /* отступ между чекбоксами */
+
+.form-group, .form-check {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
 }
-.btn-primary {
-  width: 200px; /* фиксированная ширина кнопки */
+
+.form-control-range {
+  width: 60%;
+}
+
+.btn {
+  margin-top: 2rem;
+  width: 100%;
 }
 </style>

@@ -1,174 +1,312 @@
 <template>
-  <div class="container mt-5">
-    <h1>Игра устного счета</h1>
-    <div v-if="!gameOver">
-      <p>Время: {{ timeLeft }}</p>
-      <p>Пример: {{ currentExample.question }}</p>
-      <div class="input-group mb-3">
-        <input type="number" v-model="currentAnswer" class="form-control" placeholder="Ваш ответ">
-        <button class="btn btn-primary" type="button" @click="submitAnswer">Проверить</button>
-      </div>
-      <p v-if="errorMessage" class="text-danger">{{ errorMessage }}</p>
-      <p>Счет: {{ score }}</p>
+  <div class="game-container">
+    <div class="game-stats">
+      <p>Попытка: {{ currentProblemNumber }} из {{ totalProblems }}</p>
+      <p>Правильно: {{ correctAnswers }}</p>
+      <p>Неправильно: {{ wrongAnswers }}</p>
     </div>
-    <div v-else>
-      <h2>Игра окончена!</h2>
-      <p>Ваш результат: {{ score }}</p>
-      <button class="btn btn-primary" @click="restartGame">Начать заново</button>
+    <div class="game-header">
+      <button class="exit-button" @click="exitGame">Отмена</button>
+      <button class="finish-button" @click="endGame">Завершить</button>
+      <div class="timer">{{ formattedTime }}</div>
+    </div>
+    <div class="game-board">
+      <div class="question">{{ currentProblem.question }}</div>
+      <div class="answer">{{ userAnswer || '_' }}</div>
+      <div class="number-pad">
+        <div v-for="n in [1,2,3,4,5,6,7,8,9,0]" :key="n" class="number-button" @click="inputNumber(n)">
+          {{ n }}
+        </div>
+        <div class="number-button" @click="deleteLast">⌫</div>
+        <div class="number-button" @click="submitAnswer">=</div>
+      </div>
     </div>
   </div>
-  <button class="btn btn-secondary" @click="goBack">Вернуться назад</button>
 </template>
 
 <script>
 export default {
   name: 'GameComponent',
   props: {
-    settings: {
-      type: Object,
-      default: () => ({ difficulty: 5, duration: 7, operations: ['addition'] })
+    difficulty: {
+      type: Number,
+      default: 5
+    },
+    duration: {
+      type: Number,
+      default: 7
+    },
+    operations: {
+      type: String,
+      default: 'addition'
     }
   },
   data() {
     return {
-      score: 0,
-      currentExample: {
-        question: '',
-        answer: 0
-      },
-      currentAnswer: '',
-      timeLeft: 0,
-      gameOver: false,
+      currentProblem: { question: '', answer: 0 },
+      userAnswer: '',
+      startTime: null,
+      elapsed: 0,
       timer: null,
-      errorMessage: ''
+      localDifficulty: this.difficulty,
+      localDuration: this.duration,
+      localOperations: this.operations,
+      totalProblems: 25,
+      currentProblemNumber: 0,
+      correctAnswers: 0,
+      wrongAnswers: 0,
     };
   },
-  mounted() {
-    this.loadGameState();
-    if (this.settings) {
-      this.startGame();
-    }
+  computed: {
+    formattedTime() {
+      const totalDuration = this.localDuration * 60 * 1000;
+      let secondsLeft = (totalDuration - this.elapsed) / 1000;
+      let minutes = Math.floor(secondsLeft / 60);
+      let seconds = Math.floor(secondsLeft % 60);
+      return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+    },
   },
-  beforeUnmount() {
-    this.saveGameState();
+  mounted() {
+    this.localDifficulty = parseInt(this.$route.query.difficulty, 10) || this.difficulty;
+    this.localDuration = parseInt(this.$route.query.duration, 10) || this.duration;
+
+    const operationsQueryParam = this.$route.query.operations;
+    this.localOperations = operationsQueryParam
+        ? operationsQueryParam.split(',')
+        : this.operations;
+
+    this.startGame();
   },
   methods: {
     startGame() {
-      this.score = 0;
-      this.currentAnswer = '';
-      this.timeLeft = this.settings.duration * 60;
-      this.gameOver = false;
-      this.setTimer();
-      this.nextExample();
-    },
-    setTimer() {
+      this.startTime = Date.now();
       this.timer = setInterval(() => {
-        if (this.timeLeft > 0) {
-          this.timeLeft--;
-        } else {
+        this.elapsed = Date.now() - this.startTime;
+        if (this.elapsed >= this.localDuration * 60 * 1000) {
           this.endGame();
         }
       }, 1000);
+      this.generateTask();
     },
-    generateRandomNumber(max) {
-      return Math.floor(Math.random() * max) + 1;
-    },
-    goBack() {
-      this.saveGameState();
-      this.$router.push({ name: 'Home' });
-    },
-    saveGameState() {
-      const gameState = {
-        score: this.score,
-        timeLeft: this.timeLeft
-      };
-      localStorage.setItem('gameState', JSON.stringify(gameState));
-    },
-    loadGameState() {
-      const savedState = localStorage.getItem('gameState');
-      if (savedState) {
-        const gameState = JSON.parse(savedState);
-        this.score = gameState.score;
-        this.timeLeft = gameState.timeLeft;
-      }
-    },
-    nextExample() {
-      const operation = this.settings.operations[Math.floor(Math.random() * this.settings.operations.length)];
-      const num1 = this.generateRandomNumber(10 * this.settings.difficulty);
-      const num2 = this.generateRandomNumber(10 * this.settings.difficulty);
+    generateTask() {
+      // Выбор случайной операции из массива операций
+      const randomOperation = this.localOperations[Math.floor(Math.random() * this.localOperations.length)];
+      let operand1, operand2, answer;
 
-      switch (operation) {
+      // Генерация задачи в зависимости от выбранной операции
+      switch (randomOperation) {
         case 'addition':
-          this.currentExample.question = `${num1} + ${num2}`;
-          this.currentExample.answer = num1 + num2;
+          operand1 = Math.ceil(Math.random() * 10 * this.localDifficulty);
+          operand2 = Math.ceil(Math.random() * 10 * this.localDifficulty);
+          answer = operand1 + operand2;
           break;
         case 'subtraction':
-          this.currentExample.question = `${num1} - ${num2}`;
-          this.currentExample.answer = num1 - num2;
+          operand1 = Math.ceil(Math.random() * 10 * this.localDifficulty);
+          operand2 = Math.ceil(Math.random() * operand1);
+          answer = operand1 - operand2;
           break;
         case 'multiplication':
-          this.currentExample.question = `${num1} × ${num2}`;
-          this.currentExample.answer = num1 * num2;
+          operand1 = Math.ceil(Math.random() * this.localDifficulty);
+          operand2 = Math.ceil(Math.random() * this.localDifficulty);
+          answer = operand1 * operand2;
           break;
         case 'division':
-          // Для деления убедимся, что делитель не равен нулю и результат - целое число
-          //eslint-disable-next-line no-case-declarations
-          const divisor = this.generateRandomNumber(num1 - 1) + 1; // num1 больше нуля
-          this.currentExample.question = `${num1 * divisor} ÷ ${divisor}`;
-          this.currentExample.answer = num1; // Результат деления num1 * divisor на divisor
+          operand2 = Math.ceil(Math.random() * this.localDifficulty);
+          answer = Math.ceil(Math.random() * this.localDifficulty);
+          operand1 = operand2 * answer;
           break;
         case 'exponentiation':
-          // Для возведения в степень ограничим размер числа и степени
-          // eslint-disable-next-line no-case-declarations
-          const base = this.generateRandomNumber(5 * this.settings.difficulty);
-          // eslint-disable-next-line no-case-declarations
-          const exponent = this.generateRandomNumber(this.settings.difficulty);
-          this.currentExample.question = `${base} ^ ${exponent}`;
-          this.currentExample.answer = Math.pow(base, exponent);
+          operand1 = Math.ceil(Math.random() * this.localDifficulty);
+          operand2 = Math.floor(Math.random() * 2) + 2;
+          answer = Math.pow(operand1, operand2);
           break;
         default:
-          // Если операция не выбрана, вернем простую операцию сложения
-          this.currentExample.question = `${num1} + ${num2}`;
-          this.currentExample.answer = num1 + num2;
+          console.error('Неизвестная операция: ', randomOperation);
+          return;
       }
+
+      this.currentProblem = {
+        question: `${operand1} ${this.getOperationSymbol(randomOperation)} ${operand2}`,
+        answer: answer
+      };
+    },
+    getOperationSymbol(operation) {
+      switch (operation) {
+        case 'addition':
+          return '+';
+        case 'subtraction':
+          return '-';
+        case 'multiplication':
+          return '×';
+        case 'division':
+          return '÷';
+        case 'exponentiation':
+          return '^';
+        default:
+          return '';
+      }
+    },
+    inputNumber(number) {
+      this.userAnswer += number.toString();
+    },
+    deleteLast() {
+      this.userAnswer = this.userAnswer.slice(0, -1);
     },
     submitAnswer() {
-      if (parseInt(this.currentAnswer) === this.currentExample.answer) {
-        this.score++;
-        this.errorMessage = ''; // Сброс сообщения об ошибке при правильном ответе
-        this.nextExample();
+      if (parseInt(this.userAnswer) === this.currentProblem.answer) {
+        this.correctAnswers++;
+        this.$emit('correct-answer');
       } else {
-        this.errorMessage = 'Неправильный ответ, попробуйте еще раз!';
+        this.wrongAnswers++;
+        this.$emit('wrong-answer');
       }
-      this.currentAnswer = ''; // Сброс поля ввода после каждой попытки
+      this.userAnswer = '';
+      this.currentProblemNumber++;
+      if (this.currentProblemNumber >= this.totalProblems) {
+        this.endGame();
+      } else {
+        this.generateTask();
+      }
     },
     endGame() {
-      this.gameOver = true;
+      // Расчет последнего результата
+      const lastResult = {
+        correct: this.correctAnswers,
+        total: this.totalProblems,
+        accuracy: parseFloat(((this.correctAnswers / this.totalProblems) * 100).toFixed(2)) // Округляем до двух знаков после запятой
+      };
+      // Сохраняем результат в localStorage
+      localStorage.setItem('lastResult', JSON.stringify(lastResult));
+
+      // Останавливаем таймер и перенаправляем пользователя на главную страницу
       clearInterval(this.timer);
+      this.$emit('game-over');
+      this.$router.push('/');
     },
-    restartGame() {
-      if (this.timer) {
-        clearInterval(this.timer);
-      }
-      this.startGame();
+    exitGame() {
+      clearInterval(this.timer);
+      this.$emit('exit');
+      this.$router.push('/');
     }
+  },
+  beforeUnmount() {
+    clearInterval(this.timer);
   }
 };
 </script>
 
 <style scoped>
-.container {
+.game-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  background-color: #f0f0f0;
+}
+
+.game-header {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  padding: 1rem;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.game-header, .game-board {
   max-width: 600px;
-  margin: auto;
+  width: 90%;
+  margin: 0 auto;
 }
-.input-group {
+
+.exit-button {
+  background-color: #0d6efd;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+.timer {
+  font-size: 2em;
+}
+
+.game-board {
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.question {
+  font-size: 2em;
+  margin-bottom: 1rem;
+}
+
+.answer {
+  font-size: 2em;
+  min-height: 50px;
+  margin-bottom: 1rem;
+}
+
+.number-pad {
+  width: 100%;
   max-width: 300px;
-  margin: auto;
 }
-.btn-primary, .form-control {
-  height: 38px;
+
+.number-button {
+  padding: 15px;
+  font-size: 1.5em;
+  cursor: pointer;
+  background-color: #ffffff;
+  border: 1px solid #d4d4d4;
+  border-radius: 4px;
+  transition: background-color 0.3s;
+  width: 100%;
 }
-.text-danger {
-  margin-top: 10px;
+
+.number-button:hover {
+  background-color: #e8e8e8;
+}
+
+.number-pad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.number-button:active {
+  background-color: #d4d4d4;
+}
+
+.game-board {
+  background-color: #fff;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  width: 100%;
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.timer, .question, .answer {
+  text-align: center;
+}
+
+.exit-button {
+  font-weight: bold;
+  font-size: 1.2em;
+  margin-left: 10px;
+}
+
+.exit-button, .timer {
+  width: 48%;
+}
+
+.timer {
+  font-weight: bold;
+  font-size: 1.2em;
+  margin-right: 10px;
 }
 </style>
