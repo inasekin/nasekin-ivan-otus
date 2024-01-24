@@ -13,7 +13,7 @@ export class SettingsService {
     this.settingsSource = new BehaviorSubject<any>(this.loadSettings());
   }
 
-  private loadSettings() {
+  public loadSettings() {
     if (isPlatformBrowser(this.platformId)) {
       const settings = localStorage.getItem('settings');
       return settings ? JSON.parse(settings) : this.getDefaultSettings();
@@ -21,7 +21,7 @@ export class SettingsService {
     return {};
   }
 
-  private getDefaultSettings(): any {
+  getDefaultSettings(): any {
     return {
       language: 'en',
       wordsPerExercise: 3,

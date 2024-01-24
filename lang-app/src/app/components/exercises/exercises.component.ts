@@ -6,11 +6,6 @@ import {HttpClientModule} from "@angular/common/http";
 import {CommonModule} from "@angular/common";
 import {SettingsService} from "../../services/settings.service";
 
-interface WordPair {
-  originalWord: string;
-  translatedWord: string;
-}
-
 @Component({
   selector: 'app-exercises',
   standalone: true,
@@ -19,7 +14,10 @@ interface WordPair {
   styleUrl: './exercises.component.scss'
 })
 export class ExercisesComponent implements OnInit {
-  currentWordPair!: WordPair;
+  currentWordPair!: {
+    originalWord: string;
+    translatedWord: string;
+  };
   userTranslation: string = '';
   isCorrect: boolean | null = null;
   errorMessage: string = '';
@@ -31,6 +29,7 @@ export class ExercisesComponent implements OnInit {
   remainingTime: number = 0;
   timerInterval: any;
   testCompleted = false;
+  isTesting: boolean = false;
 
   constructor(
     private dictionaryStorage: DictionaryStorageService,
