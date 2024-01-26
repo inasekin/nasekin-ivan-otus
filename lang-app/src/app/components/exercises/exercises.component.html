@@ -1,6 +1,6 @@
 <div class="exercises container">
   <h2>Word Practice</h2>
-  <p>Translate this word: {{ currentWordPair.originalWord }}</p>
+  <p>Translate this word: {{ currentWordPair?.originalWord }}</p>
   <input type="text" [(ngModel)]="userTranslation" placeholder="Your translation">
   <button (click)="checkTranslation()" [disabled]="testCompleted">Check</button>
   <p *ngIf="isCorrect">Correct!</p>
