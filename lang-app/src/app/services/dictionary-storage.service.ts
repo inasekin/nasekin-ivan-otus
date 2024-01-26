@@ -31,6 +31,11 @@ export class DictionaryStorageService {
   addWord(word: string) {
     if (isPlatformBrowser(this.platformId)) {
       const currentWords = this.dictionarySource.getValue();
+      // Проверка на дублирование слов
+      if (currentWords.includes(word)) {
+        throw new Error('Слово уже существует.');
+      }
+      // Добавление слова в словарь
       currentWords.push(word);
       localStorage.setItem('dictionary', JSON.stringify(currentWords));
       this.dictionarySource.next(currentWords);
