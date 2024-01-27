@@ -1,0 +1,9 @@
+<div class="recently-added container">
+  <h2>Recently Added Words</h2>
+  <div *ngIf="errorMessage" class="alert alert-danger">{{ errorMessage }}</div>
+  <input type="text" [(ngModel)]="newWord" placeholder="Add Word" class="mt-4">
+  <button (click)="addWord()">Add Word</button>
+  <ul class="list-group mt-4">
+    <li *ngFor="let word of words" class="list-group-item list-group-item-action">{{ word }}</li>
+  </ul>
+</div>
